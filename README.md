@@ -2,7 +2,10 @@
 
 Hey! This is my CS50 Final Project - a web app I built using Flask to help students like me track expenses and manage study tasks. It's been a great learning experience working with Python, databases, and web development!
 
-## What It Does
+
+# Video Demo:
+
+# Description
 
 ### Dashboard
 - Shows your total spending this month
@@ -90,27 +93,36 @@ You'll need Python 3.7+ installed.
 ### Quick Setup
 1. Download or clone this project
 2. Open terminal in the project folder
-3. Create a virtual environment (optional but good practice):
+3. Create a virtual environment:
    ```
    python -m venv .venv
    .\.venv\Scripts\activate  # Windows
+   source .venv/bin/activate  # Mac/Linux
    ```
 4. Install the requirements:
    ```
    pip install -r requirements.txt
    ```
-5. Run the app:
+5. Initialize the database:
+   ```
+   python init_db.py
+   ```
+6. Run the app:
    ```
    python app.py
    ```
-6. Open http://localhost:5000 in your browser
+7. Open http://localhost:5000 in your browser
 
 ## Project Files
 
 ```
 cs50 Finall Project/
 ├── app.py              # The main app file
+├── init_db.py          # Initialize the database (run once)
+├── schema.sql          # Database schema
 ├── requirements.txt    # List of packages needed
+├── Procfile            # For deployment
+├── .env.example        # Environment variables template
 ├── static/styles.css   # CSS for styling
 └── templates/          # HTML templates
     ├── layout.html     # Base page with nav
@@ -192,15 +204,21 @@ If I had more time, I might add:
 
 ## Having Issues?
 
-### Database Issues
-If you encounter database errors:
+### First Time Setup
+If the database is missing, just run:
+```bash
+python init_db.py
+```
+
+### Database Errors
+If you get database errors:
 1. Delete `database.db`
-2. Restart the application
-3. Create a new database by registering
+2. Run `python init_db.py` again
+3. Start the app fresh
 
 ### Port Already in Use
 If port 5000 is busy:
-1. Edit `app.py` and change `port=5000` to `port=5001`
+1. Edit `app.py` and change `app.run(debug=debug_mode)` to `app.run(port=5001, debug=debug_mode)`
 2. Go to `http://localhost:5001`
 
 ### Virtual Environment Problems
@@ -213,6 +231,8 @@ rm -r .venv
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+python init_db.py
+python app.py
 ```
 
 ## About This Project

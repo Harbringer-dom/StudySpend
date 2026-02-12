@@ -22,7 +22,7 @@
    - Fill in:
      - **Name:** studyspend
      - **Environment:** Python 3
-     - **Build Command:** `pip install -r requirements.txt`
+     - **Build Command:** `pip install -r requirements.txt && python init_db.py`
      - **Start Command:** `gunicorn app:app`
    - Click Deploy
    - Wait 2-3 minutes

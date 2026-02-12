@@ -1,17 +1,55 @@
-from flask import Flask, render_template, request, redirect, session, flash
+from flask import Flask, render_template, request, redirect, session, flash, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 import sqlite3
 
+import os
+
 app = Flask(__name__)
-app.secret_key = "dev"
+
+# Load secret key from environment. In production a SECRET_KEY must be provided.
+_secret = os.environ.get("SECRET_KEY")
+if not _secret:
+    if os.environ.get("FLASK_ENV") == "production":
+        raise RuntimeError("SECRET_KEY environment variable is required in production")
+    _secret = "dev"
+app.secret_key = _secret
+
+
+# Ensure the SQLite database exists; if not, create schema automatically.
+def _ensure_database():
+    db_path = os.path.join(app.root_path, "database.db")
+    if not os.path.exists(db_path):
+        schema_path = os.path.join(app.root_path, "schema.sql")
+        if os.path.exists(schema_path):
+            conn = sqlite3.connect(db_path)
+            with open(schema_path, "r", encoding="utf-8") as f:
+                conn.executescript(f.read())
+            conn.close()
+
+
+_ensure_database()
 
 
 def get_db():
-    conn = sqlite3.connect("database.db")
-    conn.row_factory = sqlite3.Row
-    return conn
+    if "db" not in g:
+        db_path = os.path.join(app.root_path, "database.db")
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        g.db = conn
+    return g.db
+
+
+def close_db(e=None):
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
+
+@app.teardown_appcontext
+def teardown_db(exception):
+    close_db(exception)
 
 
 def login_required(f):
@@ -101,7 +139,7 @@ def register():
             db.commit()
             flash("Registration successful! Please login.", "success")
             return redirect("/login")
-        except ValueError:
+        except sqlite3.IntegrityError:
             flash("Username already exists. Choose another.", "error")
             return redirect("/register")
 
@@ -299,9 +337,9 @@ def delete_expense(expense_id):
 
 
 if __name__ == "__main__":
-    import os
-
-    # Production: Use gunicorn (via Procfile)
-    # Development: Use debug mode
+    # Production: container hosts use gunicorn (see Procfile).
+    # Development/quick tests: run Flask builtin server.
     debug_mode = os.environ.get("FLASK_ENV") != "production"
-    app.run(debug=debug_mode)
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host=host, port=port, debug=debug_mode)
